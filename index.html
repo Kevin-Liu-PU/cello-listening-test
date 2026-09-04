@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robot Cello Listening Test</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --card:#ffffff; --ink:#1d1d1b; --muted:#6b6963; --line:#dcd8cf;
+    --accent:#2a5bd7; --accent-ink:#ffffff; --ok:#1f7a4d; --warn:#b4541b; --soft:#eef2fb;
+    --a:#2a5bd7; --b:#c2410c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Noto Sans CJK SC",sans-serif}
+  header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 14px;display:flex;align-items:center;gap:10px}
+  header h1{font-size:16px;margin:0;flex:1;font-weight:600}
+  .lang{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:14px;cursor:pointer}
+  main{max-width:560px;margin:0 auto;padding:16px 14px 48px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:0 0 14px}
+  h2{font-size:20px;margin:0 0 8px}
+  h3{font-size:15px;margin:18px 0 8px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+  p{margin:8px 0}
+  .muted{color:var(--muted);font-size:14px}
+  label.field{display:block;margin:12px 0 4px;font-weight:600;font-size:14px}
+  input[type=text],select,textarea{width:100%;font:inherit;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+  textarea{min-height:76px;resize:vertical}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;width:100%;margin-top:10px}
+  .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.ghost{background:transparent}
+  .row{display:flex;gap:10px}
+  .row .btn{margin-top:10px}
+  .piece{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+  .piece:first-of-type{border-top:0}
+  .piece .t{flex:1}
+  .piece .n{font-weight:600}
+  .piece .prog{font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px;white-space:nowrap}
+  .piece .go{min-height:40px;width:auto;margin:0;padding:0 14px}
+  .player{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;margin:8px 0;background:#fff}
+  .player .pb{width:64px;height:64px;border-radius:50%;border:0;color:#fff;font:inherit;font-weight:700;font-size:20px;cursor:pointer;flex:none}
+  .player.A .pb{background:var(--a)} .player.B .pb{background:var(--b)}
+  .player .bar{flex:1}
+  .player .track{height:8px;background:#e9e6df;border-radius:4px;overflow:hidden}
+  .player .fill{height:100%;width:0;background:#8d8a82}
+  .player .time{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums}
+  .q{margin:14px 0 4px;font-weight:600}
+  .seg{display:flex;gap:8px}
+  .seg button{flex:1;min-height:46px;border-radius:10px;border:1px solid var(--line);background:#fff;font:inherit;font-weight:600;cursor:pointer;color:var(--ink)}
+  .seg button.A.on{background:var(--a);color:#fff;border-color:var(--a)}
+  .seg button.B.on{background:var(--b);color:#fff;border-color:var(--b)}
+  .seg button.S.on{background:#3f3d38;color:#fff;border-color:#3f3d38}
+  .seg.conf button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .hint{font-size:13px;color:var(--warn);margin-top:8px;min-height:18px}
+  .ok{color:var(--ok)}
+  .pill{display:inline-block;background:var(--soft);border-radius:999px;padding:2px 10px;font-size:13px;color:var(--accent);font-weight:600}
+  .done{white-space:pre;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;overflow:auto;background:#faf9f6;border:1px solid var(--line);border-radius:10px;padding:10px;max-height:220px}
+  .status{font-size:13px;color:var(--muted);margin-top:8px}
+  .banner{background:#fff6e5;border:1px solid #f1d9a6;color:#6b4a0a;border-radius:10px;padding:8px 12px;font-size:13px;margin-bottom:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="hdr">Robot Cello Listening Test</h1>
+  <button class="lang" id="langbtn" type="button">中文</button>
+</header>
+<main id="app"></main>
+<script src="config.js"></script>
+<script>
+(function(){
+  const CFG = window.LT_CONFIG || {pieces:[], entry:{}};
+  const qs = new URLSearchParams(location.search);
+  if (qs.get('form')) CFG.formUrl = qs.get('form');           // local testing only
+  const KEY = 'lt_state_v2';
+  const T = {
+    en: {
+      title:'Robot Cello Listening Test', lang:'中文',
+      introH:'Which bowing sounds better?',
+      intro1:'A robot plays the same short passage twice, back to back, on the same cello. Each pair has an A take and a B take. Which is which is randomized and hidden. Loudness is as played, not normalized.',
+      intro2:'For each pair, play A and B as many times as you like, then answer a few quick questions. "Same" is a valid answer. There are no right answers.',
+      intro3:'5 pieces, 3 pairs each, about 15 minutes. Headphones strongly recommended. You can stop and continue later on the same device.',
+      name:'Your name or initials', namePh:'e.g. J.S.',
+      bg:'Your background', bgs:['Cellist','Other string player','Other musician','Non-musician'],
+      hp:'Listening on', hps:['Headphones','Speakers'],
+      consent:'Your answers are recorded together with the name you enter and used for research only.',
+      start:'Start', resume:'Continue',
+      listH:'Pieces', listSub:'Pick any piece. Finished pairs are marked. You can revisit and change an answer.',
+      pairsDone:(d,n)=>`${d} / ${n} pairs`, go:'Open', done:'Done',
+      allDone:'All 15 pairs answered. Thank you!', finish:'Finish',
+      pairH:(p,k,n)=>`${p} · pair ${k} of ${n}`,
+      listen:'Listen', playA:'A', playB:'B',
+      qPrefer:'Overall, which take sounds better?', qConf:'How confident are you?', confL:['1 guess','2','3','4','5 certain'],
+      qTone:'Tone: which is warmer / cleaner?', qAttack:'Attack: which has clearer note starts?',
+      qFull:'Fullness: which sounds fuller / rounder?', qScratch:'Scratch / bow noise: which has more?',
+      A:'A', B:'B', same:'Same',
+      notes:'Anything else you hear? (evenness, phrasing, bow noise ...)', notesPh:'optional',
+      needPlay:'Play both A and B at least once before saving.', needAns:'Please answer the first two questions.',
+      save:'Save and next', back:'Back to list', saved:'Saved',
+      doneH:'Thank you!', done1:'Your answers have been sent. If you want to keep a copy, use the button below.',
+      doneNoForm:'Collection is not configured on this page; please copy your answers and send them to the person who invited you.',
+      copy:'Copy my answers', copied:'Copied', resend:'Re-send unsent answers', unsent:(n)=>`${n} answer(s) not yet sent`,
+      email:'Email my answers', restart:'Start over (clears answers on this device)', confirmRestart:'Clear all answers on this device?'
+    },
+    zh: {
+      title:'机器人大提琴听音测试', lang:'EN',
+      introH:'哪一种弓法更好听？',
+      intro1:'机器人在同一把大提琴上背靠背拉同一小段两次。每一对有 A 和 B 两段，哪段是哪种弓法是随机的、不告知。响度按实际演奏，未做归一化。',
+      intro2:'每一对先听 A 再听 B，可以反复听，然后回答几个小问题。"一样"是合法答案，没有标准答案。',
+      intro3:'5 首曲子，每首 3 对，约 15 分钟。强烈建议戴耳机。可以中途停下，之后在同一设备上继续。',
+      name:'你的名字或缩写', namePh:'例如 J.S.',
+      bg:'你的背景', bgs:['大提琴演奏者','其他弦乐演奏者','其他音乐工作者','非音乐工作者'],
+      hp:'收听方式', hps:['耳机','外放'],
+      consent:'你的回答会和你输入的名字一起记录，仅用于研究。',
+      start:'开始', resume:'继续',
+      listH:'曲目', listSub:'任选一首开始。做完的对会打勾，可以回头修改。',
+      pairsDone:(d,n)=>`${d} / ${n} 对`, go:'进入', done:'完成',
+      allDone:'15 对全部完成，谢谢！', finish:'结束',
+      pairH:(p,k,n)=>`${p} · 第 ${k} 对 / 共 ${n}`,
+      listen:'听', playA:'A', playB:'B',
+      qPrefer:'总体上，哪段更好听？', qConf:'把握有多大？', confL:['1 猜的','2','3','4','5 确定'],
+      qTone:'音色：哪段更暖 / 更干净？', qAttack:'起音：哪段音头更清楚？',
+      qFull:'饱满：哪段更饱满圆润？', qScratch:'刮擦 / 弓噪：哪段更多？',
+      A:'A', B:'B', same:'一样',
+      notes:'还听到什么？（均匀度、句法、弓噪……）', notesPh:'选填',
+      needPlay:'A 和 B 都至少听一遍再保存。', needAns:'请先回答前两题。',
+      save:'保存并下一对', back:'回到曲目', saved:'已保存',
+      doneH:'谢谢！', done1:'你的回答已发送。想留一份的话用下面的按钮复制。',
+      doneNoForm:'这个页面没有配置收集，请复制你的回答发给邀请你的人。',
+      copy:'复制我的回答', copied:'已复制', resend:'重发未发送的回答', unsent:(n)=>`${n} 条回答尚未发送`,
+      email:'用邮件发送回答', restart:'重新开始（清除本设备上的回答）', confirmRestart:'清除本设备上的全部回答？'
+    }
+  };
+
+  function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){ return null; } }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+  let S = load() || { listener:'', background:'', headphones:'', lang:'en', answers:{}, submitted:{}, started:0 };
+  if (!S.answers) S.answers = {}; if (!S.submitted) S.submitted = {};
+  // Invite links may pre-fill the listener code, background and listening device: ?listener=C3&bg=cellist&hp=headphones&lang=zh
+  if (qs.get('listener')) { S.listener = qs.get('listener').trim().slice(0,40); }
+  if (['cellist','string','musician','non-musician'].includes(qs.get('bg'))) S.background = qs.get('bg');
+  if (['headphones','speakers'].includes(qs.get('hp'))) S.headphones = qs.get('hp');
+  if (['en','zh'].includes(qs.get('lang'))) S.lang = qs.get('lang');
+  if (qs.get('listener') || qs.get('lang')) save();
+  let L = T[S.lang] || T.en;
+
+  const app = document.getElementById('app');
+  const el = (tag, attrs, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k,v] of Object.entries(attrs||{})) {
+      if (k === 'class') n.className = v; else if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else if (v !== null && v !== undefined) n.setAttribute(k, v);
+    }
+    for (const kid of kids) if (kid !== null && kid !== undefined) n.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+    return n;
+  };
+  const show = (...nodes) => app.replaceChildren(...nodes.filter(n => n !== null && n !== undefined));
+  const totalPairs = () => CFG.pieces.reduce((s,p)=>s+p.pairs, 0);
+  const doneCount = () => Object.keys(S.answers).length;
+  const pieceDone = (p) => { let d=0; for (let k=1;k<=p.pairs;k++) if (S.answers[p.id+'/'+k]) d++; return d; };
+  const fmt = (s) => { s=Math.max(0,s|0); return (s/60|0)+':'+String(s%60).padStart(2,'0'); };
+
+  document.getElementById('langbtn').addEventListener('click', ()=>{
+    S.lang = S.lang === 'en' ? 'zh' : 'en'; L = T[S.lang]; save(); route();
+  });
+
+  // ---------- submission (Google Form) ----------
+  function formConfigured(){ return !!(CFG.formUrl && CFG.entry && CFG.entry.prefer); }
+  async function submitPair(key){
+    const a = S.answers[key]; if (!a || !formConfigured()) return false;
+    const [piece, pair] = key.split('/');
+    const fields = { listener:S.listener, background:S.background, headphones:S.headphones, piece, pair,
+      prefer:a.prefer, confidence:a.confidence, tone:a.tone||'', attack:a.attack||'', fullness:a.fullness||'', scratch:a.scratch||'', notes:a.notes||'',
+      meta: JSON.stringify(a.meta||{}) };
+    const body = new URLSearchParams();
+    for (const [f,v] of Object.entries(fields)) { const id = CFG.entry[f]; if (id) body.append(id, String(v)); }
+    try {
+      await fetch(CFG.formUrl, { method:'POST', mode:'no-cors', body, headers:{'Content-Type':'application/x-www-form-urlencoded'} });
+      S.submitted[key] = Date.now(); save(); return true;
+    } catch(e) { return false; }
+  }
+  async function resendUnsent(){ for (const key of Object.keys(S.answers)) if (!S.submitted[key]) await submitPair(key); }
+
+  function answersCSV(){
+    const cols = ['listener','background','headphones','piece','pair','prefer','confidence','tone','attack','fullness','scratch','notes','plays_A','plays_B','seconds','saved_at'];
+    const esc = (v) => { v = v===undefined||v===null ? '' : String(v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+    const lines = [cols.join(',')];
+    for (const p of CFG.pieces) for (let k=1;k<=p.pairs;k++) {
+      const a = S.answers[p.id+'/'+k]; if (!a) continue; const m = a.meta||{};
+      lines.push([S.listener,S.background,S.headphones,p.id,k,a.prefer,a.confidence,a.tone,a.attack,a.fullness,a.scratch,a.notes,m.plays_A,m.plays_B,m.seconds,m.saved_at].map(esc).join(','));
+    }
+    return lines.join('\n');
+  }
+
+  // ---------- screens ----------
+  function screenIntro(){
+    const name = el('input',{type:'text',id:'name',placeholder:L.namePh,value:S.listener,autocomplete:'off'});
+    const bg = el('select',{id:'bg'}, el('option',{value:''},'—'), ...L.bgs.map((t,i)=>el('option',{value:['cellist','string','musician','non-musician'][i], selected:S.background===['cellist','string','musician','non-musician'][i]?'':null},t)));
+    const hp = el('select',{id:'hp'}, el('option',{value:''},'—'), ...L.hps.map((t,i)=>el('option',{value:['headphones','speakers'][i], selected:S.headphones===['headphones','speakers'][i]?'':null},t)));
+    const hint = el('div',{class:'hint'});
+    const startBtn = el('button',{class:'btn primary',type:'button',onclick:()=>{
+      S.listener = name.value.trim(); S.background = bg.value; S.headphones = hp.value;
+      if (!S.listener || !S.background || !S.headphones) { hint.textContent = L.needAns; return; }
+      if (!S.started) S.started = Date.now(); save(); location.hash = '#list';
+    }}, doneCount() ? L.resume : L.start);
+    show(
+      formConfigured() ? null : el('div',{class:'banner'}, L.doneNoForm),
+      el('div',{class:'card'},
+        el('h2',{},L.introH), el('p',{},L.intro1), el('p',{},L.intro2), el('p',{class:'muted'},L.intro3),
+        el('label',{class:'field',for:'name'},L.name), name,
+        el('label',{class:'field',for:'bg'},L.bg), bg,
+        el('label',{class:'field',for:'hp'},L.hp), hp,
+        el('p',{class:'muted'},L.consent), hint, startBtn)
+    );
+  }
+
+  function screenList(){
+    if (!S.listener) { location.hash = '#intro'; return; }
+    const n = totalPairs(), d = doneCount();
+    const rows = CFG.pieces.map(p => {
+      const pd = pieceDone(p);
+      let next = 1; for (let k=1;k<=p.pairs;k++) if (!S.answers[p.id+'/'+k]) { next = k; break; }
+      return el('div',{class:'piece'},
+        el('div',{class:'t'}, el('div',{class:'n'}, p.name[S.lang]||p.name.en), el('div',{class:'muted'}, p.desc[S.lang]||p.desc.en)),
+        el('div',{class:'prog'}, pd===p.pairs ? '✓ '+L.done : L.pairsDone(pd,p.pairs)),
+        el('button',{class:'btn go',type:'button',onclick:()=>{ location.hash = '#pair/'+p.id+'/'+(pd===p.pairs?1:next); }}, L.go));
+    });
+    show(
+      el('div',{class:'card'},
+        el('h2',{},L.listH), el('p',{class:'muted'},L.listSub),
+        el('p',{}, el('span',{class:'pill'}, L.pairsDone(d,n))),
+        ...rows,
+        d===n ? el('button',{class:'btn primary',type:'button',onclick:()=>{ location.hash='#done'; }}, L.finish) : null),
+      el('button',{class:'btn ghost',type:'button',onclick:()=>{ location.hash='#intro'; }}, '← '+L.name)
+    );
+  }
+
+  let audio = { A:null, B:null };
+  function stopAudio(){ for (const t of ['A','B']) if (audio[t]) { audio[t].pause(); audio[t].src=''; audio[t]=null; } }
+
+  function screenPair(pieceId, k){
+    const p = CFG.pieces.find(x=>x.id===pieceId); if (!p || !S.listener) { location.hash = S.listener ? '#list' : '#intro'; return; }
+    k = Math.min(Math.max(1, k|0), p.pairs);
+    const key = pieceId+'/'+k;
+    const prev = S.answers[key] || {};
+    const ans = { prefer:prev.prefer||'', confidence:prev.confidence||'', tone:prev.tone||'', attack:prev.attack||'', fullness:prev.fullness||'', scratch:prev.scratch||'', notes:prev.notes||'' };
+    const plays = { A:0, B:0 }; const t0 = Date.now();
+    stopAudio();
+
+    function player(tag){
+      const a = new Audio('clips/'+pieceId+'_pair'+k+'_'+tag+'.wav'); a.preload = 'auto'; audio[tag] = a;
+      const btn = el('button',{class:'pb',type:'button','aria-label':'play '+tag}, '▶ '+tag);
+      const fill = el('div',{class:'fill'}); const cur = el('span',{}, '0:00'); const dur = el('span',{}, '–:––');
+      a.addEventListener('loadedmetadata', ()=>{ dur.textContent = fmt(a.duration); });
+      a.addEventListener('timeupdate', ()=>{ if (a.duration) fill.style.width = (100*a.currentTime/a.duration)+'%'; cur.textContent = fmt(a.currentTime); });
+      a.addEventListener('play', ()=>{ const o = audio[tag==='A'?'B':'A']; if (o && !o.paused) o.pause(); if (a.currentTime < 0.25) plays[tag]++; btn.textContent = '❚❚ '+tag; refreshHint(); });
+      a.addEventListener('pause', ()=>{ btn.textContent = '▶ '+tag; });
+      a.addEventListener('ended', ()=>{ btn.textContent = '▶ '+tag; fill.style.width='100%'; });
+      btn.addEventListener('click', ()=>{ if (a.paused) { if (a.ended) a.currentTime = 0; a.play().catch(()=>{}); } else a.pause(); });
+      const track = el('div',{class:'track'}, fill);
+      track.addEventListener('click', (ev)=>{ const r = track.getBoundingClientRect(); if (a.duration) a.currentTime = a.duration*(ev.clientX-r.left)/r.width; });
+      return el('div',{class:'player '+tag}, btn, el('div',{class:'bar'}, track, el('div',{class:'time'}, cur, dur)));
+    }
+
+    function seg(field, opts){
+      const btns = opts.map(([val,label,cls]) => el('button',{type:'button',class:cls+(ans[field]===val?' on':'')}, label));
+      btns.forEach((b,i)=>b.addEventListener('click', ()=>{ ans[field] = opts[i][0]; btns.forEach((x,j)=>x.classList.toggle('on', j===i)); refreshHint(); }));
+      return el('div',{class:'seg'+(field==='confidence'?' conf':'')}, ...btns);
+    }
+    const abs = (field) => seg(field, [['A',L.A,'A'],['same',L.same,'S'],['B',L.B,'B']]);
+    const notes = el('textarea',{placeholder:L.notesPh}, ans.notes); notes.addEventListener('input', ()=>{ ans.notes = notes.value; });
+    const hint = el('div',{class:'hint'}); const saveBtn = el('button',{class:'btn primary',type:'button'}, L.save);
+    function ready(){ const played = (plays.A>0 && plays.B>0) || !!prev.prefer; return { played, answered: !!(ans.prefer && ans.confidence) }; }
+    function refreshHint(){ const r = ready(); saveBtn.disabled = !(r.played && r.answered); hint.textContent = !r.played ? L.needPlay : (!r.answered ? L.needAns : ''); }
+    saveBtn.addEventListener('click', async ()=>{
+      const r = ready(); if (!(r.played && r.answered)) { refreshHint(); return; }
+      const m = prev.meta || {};
+      ans.meta = { plays_A:(m.plays_A||0)+plays.A, plays_B:(m.plays_B||0)+plays.B, seconds:(m.seconds||0)+Math.round((Date.now()-t0)/1000),
+        saved_at:new Date().toISOString(), version:CFG.version, lang:S.lang, ua:navigator.userAgent.slice(0,80), revision:(m.revision||0)+1 };
+      S.answers[key] = ans; delete S.submitted[key]; save();
+      saveBtn.disabled = true; saveBtn.textContent = L.saved;
+      submitPair(key);                      // fire and forget; unsent answers can be re-sent from the last screen
+      stopAudio();
+      let nextKey = null;
+      for (let j=k+1;j<=p.pairs;j++) if (!S.answers[pieceId+'/'+j]) { nextKey = '#pair/'+pieceId+'/'+j; break; }
+      if (!nextKey) for (const q of CFG.pieces) for (let j=1;j<=q.pairs;j++) if (!S.answers[q.id+'/'+j] && !nextKey) nextKey = '#pair/'+q.id+'/'+j;
+      location.hash = nextKey || (doneCount()===totalPairs() ? '#done' : '#list');
+    });
+
+    show(
+      el('div',{class:'card'},
+        el('h2',{}, L.pairH(p.name[S.lang]||p.name.en, k, p.pairs)),
+        el('h3',{}, L.listen), player('A'), player('B'),
+        el('div',{class:'q'}, L.qPrefer), abs('prefer'),
+        el('div',{class:'q'}, L.qConf), seg('confidence', L.confL.map((t,i)=>[String(i+1), t, ''])),
+        el('div',{class:'q'}, L.qTone), abs('tone'),
+        el('div',{class:'q'}, L.qAttack), abs('attack'),
+        el('div',{class:'q'}, L.qFull), abs('fullness'),
+        el('div',{class:'q'}, L.qScratch), abs('scratch'),
+        el('div',{class:'q'}, L.notes), notes,
+        hint, saveBtn,
+        el('button',{class:'btn ghost',type:'button',onclick:()=>{ stopAudio(); location.hash='#list'; }}, L.back))
+    );
+    refreshHint();
+  }
+
+  function screenDone(){
+    if (!S.listener) { location.hash = '#intro'; return; }
+    const unsent = Object.keys(S.answers).filter(k=>!S.submitted[k]).length;
+    const csv = answersCSV();
+    const status = el('div',{class:'status'}, formConfigured() ? (unsent ? L.unsent(unsent) : '') : '');
+    const copyBtn = el('button',{class:'btn',type:'button',onclick:async()=>{ try{ await navigator.clipboard.writeText(csv); copyBtn.textContent = L.copied; }catch(e){ box.focus(); box.select(); } }}, L.copy);
+    const box = el('textarea',{class:'done',readonly:''}, csv);
+    show(
+      el('div',{class:'card'},
+        el('h2',{}, L.doneH), el('p',{}, doneCount()===totalPairs() ? L.allDone : ''),
+        el('p',{}, formConfigured() ? L.done1 : L.doneNoForm),
+        status,
+        (formConfigured() && unsent) ? el('button',{class:'btn primary',type:'button',onclick:async(ev)=>{ ev.target.disabled=true; await resendUnsent(); route(); }}, L.resend) : null,
+        copyBtn, box,
+        CFG.fallbackEmail ? el('a',{class:'btn',href:'mailto:'+CFG.fallbackEmail+'?subject='+encodeURIComponent('Listening test answers: '+S.listener)+'&body='+encodeURIComponent(csv)}, L.email) : null,
+        el('button',{class:'btn ghost',type:'button',onclick:()=>{ location.hash='#list'; }}, L.back),
+        el('button',{class:'btn ghost',type:'button',onclick:()=>{ if (confirm(L.confirmRestart)) { S = {listener:'',background:'',headphones:'',lang:S.lang,answers:{},submitted:{},started:0}; save(); location.hash='#intro'; } }}, L.restart))
+    );
+  }
+
+  function route(){
+    document.getElementById('hdr').textContent = L.title; document.getElementById('langbtn').textContent = L.lang; document.documentElement.lang = S.lang==='zh'?'zh-CN':'en';
+    const h = location.hash.replace(/^#/,'').split('/');
+    if (h[0]==='pair' && h[1]) screenPair(h[1], parseInt(h[2]||'1',10));
+    else if (h[0]==='list') screenList();
+    else if (h[0]==='done') screenDone();
+    else screenIntro();
+    window.scrollTo(0,0);
+  }
+  window.addEventListener('hashchange', route);
+  route();
+
+  // Local verification hook: ?autotest=1&form=<url> answers one pair programmatically and reports to #autotest.
+  if (qs.get('autotest') === '2') {
+    // UI-level check: drive the real pair screen through its buttons (play gating, answers, save, routing, submission).
+    (async () => {
+      const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+      const report = {};
+      S.listener='AUTOTEST2'; S.background='cellist'; S.headphones='headphones'; S.answers={}; S.submitted={}; save();
+      location.hash = '#pair/twinkle/1'; await sleep(300);
+      const saveBtn = [...document.querySelectorAll('button.btn.primary')][0];
+      report.disabledBeforePlay = saveBtn.disabled;
+      // synthetic play events (headless Chrome has no audio device); the real button path calls audio.play() which fires the same event
+      audio.A.dispatchEvent(new Event('play')); await sleep(100); audio.B.dispatchEvent(new Event('play')); await sleep(100);
+      report.hintAfterPlay = document.querySelector('.hint').textContent;
+      const segs = document.querySelectorAll('.seg');
+      segs[0].querySelectorAll('button')[2].click();   // prefer = B
+      segs[1].querySelectorAll('button')[3].click();   // confidence = 4
+      segs[2].querySelectorAll('button')[1].click();   // tone = same
+      report.disabledAfterAnswers = saveBtn.disabled;
+      saveBtn.click(); await sleep(600);
+      report.hashAfterSave = location.hash; report.saved = S.answers['twinkle/1']; report.submitted = !!S.submitted['twinkle/1'];
+      document.body.append(el('pre',{id:'autotest'}, JSON.stringify(report)));
+    })();
+  } else if (qs.get('autotest')) {
+    (async () => {
+      S.listener='AUTOTEST'; S.background='cellist'; S.headphones='headphones'; S.answers={}; S.submitted={};
+      S.answers['bach/2'] = { prefer:'B', confidence:'4', tone:'B', attack:'same', fullness:'A', scratch:'A', notes:'auto "note", with comma', meta:{plays_A:2,plays_B:1,seconds:41,saved_at:'2026-09-04T00:00:00Z',version:CFG.version,lang:'en',ua:'test',revision:1} };
+      save();
+      const ok = await submitPair('bach/2');
+      const out = el('pre',{id:'autotest'}, JSON.stringify({ ok, formConfigured: formConfigured(), submitted: !!S.submitted['bach/2'], csv: answersCSV() }));
+      document.body.append(out);
+    })();
+  }
+})();
+</script>
+</body>
+</html>
