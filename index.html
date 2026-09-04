@@ -78,21 +78,21 @@
       intro1:'A robot plays the same short passage twice, back to back, on the same cello. Each pair has an A take and a B take. Which is which is randomized and hidden. Loudness is as played, not normalized.',
       intro2:'For each pair, play A and B as many times as you like, then answer a few quick questions. "Same" is a valid answer. There are no right answers.',
       intro3:'5 pieces, 3 pairs each, about 15 minutes. Headphones strongly recommended. You can stop and continue later on the same device.',
-      name:'Your name or initials', namePh:'e.g. J.S.',
+      name:'Your name or initials (optional)', namePh:'leave blank to stay anonymous',
       bg:'Your background', bgs:['Cellist','Other string player','Other musician','Non-musician'],
       hp:'Listening on', hps:['Headphones','Speakers'],
-      consent:'Your answers are recorded together with the name you enter and used for research only.',
+      consent:'Your answers are recorded under the name you enter, or under an anonymous code if you leave it blank, and used for research only.',
       start:'Start', resume:'Continue',
-      listH:'Pieces', listSub:'Pick any piece. Finished pairs are marked. You can revisit and change an answer.',
+      listH:'Pieces', listSub:'Please do all five pieces (15 pairs). Use the button below to go through them in order, or open any piece. Finished pairs are marked and you can revisit and change an answer.', next:'Next pair',
       pairsDone:(d,n)=>`${d} / ${n} pairs`, go:'Open', done:'Done',
       allDone:'All 15 pairs answered. Thank you!', finish:'Finish',
       pairH:(p,k,n)=>`${p} · pair ${k} of ${n}`,
       listen:'Listen', playA:'A', playB:'B',
       qPrefer:'Overall, which take sounds better?', qConf:'How confident are you?', confL:['1 guess','2','3','4','5 certain'],
-      qTone:'Tone: which is warmer / cleaner?', qAttack:'Attack: which has clearer note starts?',
-      qFull:'Fullness: which sounds fuller / rounder?', qScratch:'Scratch / bow noise: which has more?',
+      qTone:'Sustained tone: which is clearer / more resonant?', qAttack:'Note starts: which begins more cleanly (less scratch, thump or late catch)?',
+      qRelease:'Note endings: which finishes more cleanly (less abrupt, noisy or uneven)?',
       A:'A', B:'B', same:'Same',
-      notes:'Anything else you hear? (evenness, phrasing, bow noise ...)', notesPh:'optional',
+      notes:'Anything else you hear? (fullness, evenness, phrasing, bow noise ...)', notesPh:'optional',
       needPlay:'Play both A and B at least once before saving.', needAns:'Please answer the first two questions.',
       save:'Save and next', back:'Back to list', saved:'Saved',
       doneH:'Thank you!', done1:'Your answers have been sent. If you want to keep a copy, use the button below.',
@@ -106,21 +106,21 @@
       intro1:'机器人在同一把大提琴上背靠背拉同一小段两次。每一对有 A 和 B 两段，哪段是哪种弓法是随机的、不告知。响度按实际演奏，未做归一化。',
       intro2:'每一对先听 A 再听 B，可以反复听，然后回答几个小问题。"一样"是合法答案，没有标准答案。',
       intro3:'5 首曲子，每首 3 对，约 15 分钟。强烈建议戴耳机。可以中途停下，之后在同一设备上继续。',
-      name:'你的名字或缩写', namePh:'例如 J.S.',
+      name:'你的名字或缩写（选填）', namePh:'留空则匿名',
       bg:'你的背景', bgs:['大提琴演奏者','其他弦乐演奏者','其他音乐工作者','非音乐工作者'],
       hp:'收听方式', hps:['耳机','外放'],
-      consent:'你的回答会和你输入的名字一起记录，仅用于研究。',
+      consent:'你的回答按你填的名字记录，留空则按一个匿名码记录，仅用于研究。',
       start:'开始', resume:'继续',
-      listH:'曲目', listSub:'任选一首开始。做完的对会打勾，可以回头修改。',
+      listH:'曲目', listSub:'请把五首都做完（共 15 对）。用下面的按钮按顺序做，或者任选一首进入。做完的对会打勾，可以回头修改。', next:'下一对',
       pairsDone:(d,n)=>`${d} / ${n} 对`, go:'进入', done:'完成',
       allDone:'15 对全部完成，谢谢！', finish:'结束',
       pairH:(p,k,n)=>`${p} · 第 ${k} 对 / 共 ${n}`,
       listen:'听', playA:'A', playB:'B',
       qPrefer:'总体上，哪段更好听？', qConf:'把握有多大？', confL:['1 猜的','2','3','4','5 确定'],
-      qTone:'音色：哪段更暖 / 更干净？', qAttack:'起音：哪段音头更清楚？',
-      qFull:'饱满：哪段更饱满圆润？', qScratch:'刮擦 / 弓噪：哪段更多？',
+      qTone:'持续音：哪段更清晰、更共鸣？', qAttack:'起音：哪段开始得更干净（更少刮擦、闷响、咬弦迟）？',
+      qRelease:'收音：哪段结束得更干净（更少突兀、噪音、不均匀）？',
       A:'A', B:'B', same:'一样',
-      notes:'还听到什么？（均匀度、句法、弓噪……）', notesPh:'选填',
+      notes:'还听到什么？（饱满度、均匀度、句法、弓噪……）', notesPh:'选填',
       needPlay:'A 和 B 都至少听一遍再保存。', needAns:'请先回答前两题。',
       save:'保存并下一对', back:'回到曲目', saved:'已保存',
       doneH:'谢谢！', done1:'你的回答已发送。想留一份的话用下面的按钮复制。',
@@ -140,6 +140,7 @@
   if (['headphones','speakers'].includes(qs.get('hp'))) S.headphones = qs.get('hp');
   if (['en','zh'].includes(qs.get('lang'))) S.lang = qs.get('lang');
   if (qs.get('listener') || qs.get('lang')) save();
+  const anonCode = () => 'anon-' + Math.random().toString(36).slice(2,6) + Date.now().toString(36).slice(-3);
   let L = T[S.lang] || T.en;
 
   const app = document.getElementById('app');
@@ -167,7 +168,7 @@
     const a = S.answers[key]; if (!a || !formConfigured()) return false;
     const [piece, pair] = key.split('/');
     const fields = { listener:S.listener, background:S.background, headphones:S.headphones, piece, pair,
-      prefer:a.prefer, confidence:a.confidence, tone:a.tone||'', attack:a.attack||'', fullness:a.fullness||'', scratch:a.scratch||'', notes:a.notes||'',
+      prefer:a.prefer, confidence:a.confidence, tone:a.tone||'', attack:a.attack||'', release:a.release||'', notes:a.notes||'',
       meta: JSON.stringify(a.meta||{}) };
     const body = new URLSearchParams();
     for (const [f,v] of Object.entries(fields)) { const id = CFG.entry[f]; if (id) body.append(id, String(v)); }
@@ -179,25 +180,25 @@
   async function resendUnsent(){ for (const key of Object.keys(S.answers)) if (!S.submitted[key]) await submitPair(key); }
 
   function answersCSV(){
-    const cols = ['listener','background','headphones','piece','pair','prefer','confidence','tone','attack','fullness','scratch','notes','plays_A','plays_B','seconds','saved_at'];
+    const cols = ['listener','background','headphones','piece','pair','prefer','confidence','tone','attack','release','notes','plays_A','plays_B','seconds','saved_at'];
     const esc = (v) => { v = v===undefined||v===null ? '' : String(v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
     const lines = [cols.join(',')];
     for (const p of CFG.pieces) for (let k=1;k<=p.pairs;k++) {
       const a = S.answers[p.id+'/'+k]; if (!a) continue; const m = a.meta||{};
-      lines.push([S.listener,S.background,S.headphones,p.id,k,a.prefer,a.confidence,a.tone,a.attack,a.fullness,a.scratch,a.notes,m.plays_A,m.plays_B,m.seconds,m.saved_at].map(esc).join(','));
+      lines.push([S.listener,S.background,S.headphones,p.id,k,a.prefer,a.confidence,a.tone,a.attack,a.release,a.notes,m.plays_A,m.plays_B,m.seconds,m.saved_at].map(esc).join(','));
     }
     return lines.join('\n');
   }
 
   // ---------- screens ----------
   function screenIntro(){
-    const name = el('input',{type:'text',id:'name',placeholder:L.namePh,value:S.listener,autocomplete:'off'});
+    const name = el('input',{type:'text',id:'name',placeholder:L.namePh,value:(S.listener||'').startsWith('anon-') ? '' : S.listener,autocomplete:'off'});
     const bg = el('select',{id:'bg'}, el('option',{value:''},'—'), ...L.bgs.map((t,i)=>el('option',{value:['cellist','string','musician','non-musician'][i], selected:S.background===['cellist','string','musician','non-musician'][i]?'':null},t)));
     const hp = el('select',{id:'hp'}, el('option',{value:''},'—'), ...L.hps.map((t,i)=>el('option',{value:['headphones','speakers'][i], selected:S.headphones===['headphones','speakers'][i]?'':null},t)));
     const hint = el('div',{class:'hint'});
     const startBtn = el('button',{class:'btn primary',type:'button',onclick:()=>{
-      S.listener = name.value.trim(); S.background = bg.value; S.headphones = hp.value;
-      if (!S.listener || !S.background || !S.headphones) { hint.textContent = L.needAns; return; }
+      S.listener = name.value.trim() || (S.listener && S.listener.startsWith('anon-') ? S.listener : anonCode()); S.background = bg.value; S.headphones = hp.value;
+      if (!S.background || !S.headphones) { hint.textContent = L.needAns; return; }
       if (!S.started) S.started = Date.now(); save(); location.hash = '#list';
     }}, doneCount() ? L.resume : L.start);
     show(
@@ -226,6 +227,7 @@
       el('div',{class:'card'},
         el('h2',{},L.listH), el('p',{class:'muted'},L.listSub),
         el('p',{}, el('span',{class:'pill'}, L.pairsDone(d,n))),
+        d<n ? el('button',{class:'btn primary',type:'button',onclick:()=>{ for (const q of CFG.pieces) for (let j=1;j<=q.pairs;j++) if (!S.answers[q.id+'/'+j]) { location.hash='#pair/'+q.id+'/'+j; return; } }}, L.next+' →') : null,
         ...rows,
         d===n ? el('button',{class:'btn primary',type:'button',onclick:()=>{ location.hash='#done'; }}, L.finish) : null),
       el('button',{class:'btn ghost',type:'button',onclick:()=>{ location.hash='#intro'; }}, '← '+L.name)
@@ -240,12 +242,12 @@
     k = Math.min(Math.max(1, k|0), p.pairs);
     const key = pieceId+'/'+k;
     const prev = S.answers[key] || {};
-    const ans = { prefer:prev.prefer||'', confidence:prev.confidence||'', tone:prev.tone||'', attack:prev.attack||'', fullness:prev.fullness||'', scratch:prev.scratch||'', notes:prev.notes||'' };
+    const ans = { prefer:prev.prefer||'', confidence:prev.confidence||'', tone:prev.tone||'', attack:prev.attack||'', release:prev.release||'', notes:prev.notes||'' };
     const plays = { A:0, B:0 }; const t0 = Date.now();
     stopAudio();
 
     function player(tag){
-      const a = new Audio('clips/'+pieceId+'_pair'+k+'_'+tag+'.wav'); a.preload = 'auto'; audio[tag] = a;
+      const a = new Audio('clips/'+pieceId+'_pair'+k+'_'+tag+'.wav'); a.preload = qs.get('autotest') ? 'none' : 'auto'; audio[tag] = a;
       const btn = el('button',{class:'pb',type:'button','aria-label':'play '+tag}, '▶ '+tag);
       const fill = el('div',{class:'fill'}); const cur = el('span',{}, '0:00'); const dur = el('span',{}, '–:––');
       a.addEventListener('loadedmetadata', ()=>{ dur.textContent = fmt(a.duration); });
@@ -292,8 +294,7 @@
         el('div',{class:'q'}, L.qConf), seg('confidence', L.confL.map((t,i)=>[String(i+1), t, ''])),
         el('div',{class:'q'}, L.qTone), abs('tone'),
         el('div',{class:'q'}, L.qAttack), abs('attack'),
-        el('div',{class:'q'}, L.qFull), abs('fullness'),
-        el('div',{class:'q'}, L.qScratch), abs('scratch'),
+        el('div',{class:'q'}, L.qRelease), abs('release'),
         el('div',{class:'q'}, L.notes), notes,
         hint, saveBtn,
         el('button',{class:'btn ghost',type:'button',onclick:()=>{ stopAudio(); location.hash='#list'; }}, L.back))
@@ -354,11 +355,12 @@
       saveBtn.click(); await sleep(600);
       report.hashAfterSave = location.hash; report.saved = S.answers['twinkle/1']; report.submitted = !!S.submitted['twinkle/1'];
       document.body.append(el('pre',{id:'autotest'}, JSON.stringify(report)));
+      try { await fetch('http://localhost:8765/report', {method:'POST', mode:'no-cors', body:new URLSearchParams({report:JSON.stringify(report)})}); } catch(e) {}
     })();
   } else if (qs.get('autotest')) {
     (async () => {
       S.listener='AUTOTEST'; S.background='cellist'; S.headphones='headphones'; S.answers={}; S.submitted={};
-      S.answers['bach/2'] = { prefer:'B', confidence:'4', tone:'B', attack:'same', fullness:'A', scratch:'A', notes:'auto "note", with comma', meta:{plays_A:2,plays_B:1,seconds:41,saved_at:'2026-09-04T00:00:00Z',version:CFG.version,lang:'en',ua:'test',revision:1} };
+      S.answers['bach/2'] = { prefer:'B', confidence:'4', tone:'B', attack:'same', release:'A', notes:'auto "note", with comma', meta:{plays_A:2,plays_B:1,seconds:41,saved_at:'2026-09-04T00:00:00Z',version:CFG.version,lang:'en',ua:'test',revision:1} };
       save();
       const ok = await submitPair('bach/2');
       const out = el('pre',{id:'autotest'}, JSON.stringify({ ok, formConfigured: formConfigured(), submitted: !!S.submitted['bach/2'], csv: answersCSV() }));
