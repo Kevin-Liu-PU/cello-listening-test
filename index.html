@@ -93,7 +93,7 @@
       qRelease:'Note endings: which finishes more cleanly (less abrupt, noisy or uneven)?',
       A:'A', B:'B', same:'Same',
       notes:'Anything else you hear? (fullness, evenness, phrasing, bow noise ...)', notesPh:'optional',
-      needPlay:'Play both A and B at least once before saving.', needAns:'Please answer the first two questions.',
+      needPlay:'Listen to at least half of A and half of B before saving.', needAns:'Please answer the first two questions.',
       save:'Save and next', back:'Back to list', saved:'Saved',
       doneH:'Thank you!', done1:'Your answers have been sent. If you want to keep a copy, use the button below.',
       doneNoForm:'Collection is not configured on this page; please copy your answers and send them to the person who invited you.',
@@ -121,7 +121,7 @@
       qRelease:'收音：哪段结束得更干净（更少突兀、噪音、不均匀）？',
       A:'A', B:'B', same:'一样',
       notes:'还听到什么？（饱满度、均匀度、句法、弓噪……）', notesPh:'选填',
-      needPlay:'A 和 B 都至少听一遍再保存。', needAns:'请先回答前两题。',
+      needPlay:'A 和 B 各至少听一半再保存。', needAns:'请先回答前两题。',
       save:'保存并下一对', back:'回到曲目', saved:'已保存',
       doneH:'谢谢！', done1:'你的回答已发送。想留一份的话用下面的按钮复制。',
       doneNoForm:'这个页面没有配置收集，请复制你的回答发给邀请你的人。',
@@ -243,22 +243,29 @@
     const key = pieceId+'/'+k;
     const prev = S.answers[key] || {};
     const ans = { prefer:prev.prefer||'', confidence:prev.confidence||'', tone:prev.tone||'', attack:prev.attack||'', release:prev.release||'', notes:prev.notes||'' };
-    const plays = { A:0, B:0 }; const t0 = Date.now();
+    const plays = { A:0, B:0 }; const heard = { A:0, B:0 }; const dur = { A:0, B:0 }; const t0 = Date.now();
+    const HEARD_FRAC = 0.5;   // each take must be played for at least this fraction of its duration (cumulative, seeking does not count)
     stopAudio();
 
     function player(tag){
       const a = new Audio('clips/'+pieceId+'_pair'+k+'_'+tag+'.wav'); a.preload = qs.get('autotest') ? 'none' : 'auto'; audio[tag] = a;
       const btn = el('button',{class:'pb',type:'button','aria-label':'play '+tag}, '▶ '+tag);
-      const fill = el('div',{class:'fill'}); const cur = el('span',{}, '0:00'); const dur = el('span',{}, '–:––');
-      a.addEventListener('loadedmetadata', ()=>{ dur.textContent = fmt(a.duration); });
-      a.addEventListener('timeupdate', ()=>{ if (a.duration) fill.style.width = (100*a.currentTime/a.duration)+'%'; cur.textContent = fmt(a.currentTime); });
-      a.addEventListener('play', ()=>{ const o = audio[tag==='A'?'B':'A']; if (o && !o.paused) o.pause(); if (a.currentTime < 0.25) plays[tag]++; btn.textContent = '❚❚ '+tag; refreshHint(); });
+      const fill = el('div',{class:'fill'}); const cur = el('span',{}, '0:00'); const durEl = el('span',{}, '–:––');
+      let lastT = 0;
+      a.addEventListener('loadedmetadata', ()=>{ durEl.textContent = fmt(a.duration); dur[tag] = a.duration; });
+      a.addEventListener('timeupdate', ()=>{
+        if (a.duration) fill.style.width = (100*a.currentTime/a.duration)+'%'; cur.textContent = fmt(a.currentTime);
+        const dt = a.currentTime - lastT; if (!a.paused && dt > 0 && dt < 1.5) { heard[tag] += dt; refreshHint(); }   // only real playback accumulates
+        lastT = a.currentTime;
+      });
+      a.addEventListener('seeked', ()=>{ lastT = a.currentTime; });
+      a.addEventListener('play', ()=>{ const o = audio[tag==='A'?'B':'A']; if (o && !o.paused) o.pause(); if (a.currentTime < 0.25) plays[tag]++; if (qs.get('autotest')) { heard[tag] = 999; dur[tag] = dur[tag] || 1; } btn.textContent = '❚❚ '+tag; refreshHint(); });
       a.addEventListener('pause', ()=>{ btn.textContent = '▶ '+tag; });
       a.addEventListener('ended', ()=>{ btn.textContent = '▶ '+tag; fill.style.width='100%'; });
       btn.addEventListener('click', ()=>{ if (a.paused) { if (a.ended) a.currentTime = 0; a.play().catch(()=>{}); } else a.pause(); });
       const track = el('div',{class:'track'}, fill);
       track.addEventListener('click', (ev)=>{ const r = track.getBoundingClientRect(); if (a.duration) a.currentTime = a.duration*(ev.clientX-r.left)/r.width; });
-      return el('div',{class:'player '+tag}, btn, el('div',{class:'bar'}, track, el('div',{class:'time'}, cur, dur)));
+      return el('div',{class:'player '+tag}, btn, el('div',{class:'bar'}, track, el('div',{class:'time'}, cur, durEl)));
     }
 
     function seg(field, opts){
@@ -269,12 +276,13 @@
     const abs = (field) => seg(field, [['A',L.A,'A'],['same',L.same,'S'],['B',L.B,'B']]);
     const notes = el('textarea',{placeholder:L.notesPh}, ans.notes); notes.addEventListener('input', ()=>{ ans.notes = notes.value; });
     const hint = el('div',{class:'hint'}); const saveBtn = el('button',{class:'btn primary',type:'button'}, L.save);
-    function ready(){ const played = (plays.A>0 && plays.B>0) || !!prev.prefer; return { played, answered: !!(ans.prefer && ans.confidence) }; }
+    const heardEnough = (t) => heard[t] >= HEARD_FRAC * (dur[t] || 1e9);
+    function ready(){ const played = (heardEnough('A') && heardEnough('B')) || !!prev.prefer; return { played, answered: !!(ans.prefer && ans.confidence) }; }
     function refreshHint(){ const r = ready(); saveBtn.disabled = !(r.played && r.answered); hint.textContent = !r.played ? L.needPlay : (!r.answered ? L.needAns : ''); }
     saveBtn.addEventListener('click', async ()=>{
       const r = ready(); if (!(r.played && r.answered)) { refreshHint(); return; }
       const m = prev.meta || {};
-      ans.meta = { plays_A:(m.plays_A||0)+plays.A, plays_B:(m.plays_B||0)+plays.B, seconds:(m.seconds||0)+Math.round((Date.now()-t0)/1000),
+      ans.meta = { plays_A:(m.plays_A||0)+plays.A, plays_B:(m.plays_B||0)+plays.B, heard_A:+((m.heard_A||0)+(dur.A?heard.A/dur.A:0)).toFixed(2), heard_B:+((m.heard_B||0)+(dur.B?heard.B/dur.B:0)).toFixed(2), seconds:(m.seconds||0)+Math.round((Date.now()-t0)/1000),
         saved_at:new Date().toISOString(), version:CFG.version, lang:S.lang, ua:navigator.userAgent.slice(0,80), revision:(m.revision||0)+1 };
       S.answers[key] = ans; delete S.submitted[key]; save();
       saveBtn.disabled = true; saveBtn.textContent = L.saved;
