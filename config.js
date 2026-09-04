@@ -3,13 +3,13 @@
 // entry: the Google Form field ids (entry.NNNNN) for each column, taken from a pre-filled link.
 // Leave formUrl empty to run without collection (answers stay in the browser and can be copied on the last screen).
 window.LT_CONFIG = {
-  version: "2026-09-04b",
-  formUrl: "",
+  version: "2026-09-04c",
+  formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSfo4FH_zRXYcWteCwzu677GPxlOCM3QqdXDYY6RteehC09gIg/formResponse",
   entry: {
-    listener: "", background: "", headphones: "",
-    piece: "", pair: "",
-    prefer: "", confidence: "", tone: "", attack: "", release: "", notes: "",
-    meta: ""
+    listener: "entry.1757038299", background: "entry.1076943540", headphones: "entry.1294350542",
+    piece: "entry.1067321661", pair: "entry.1376800245",
+    prefer: "entry.281010762", confidence: "entry.1442183737", tone: "entry.1410486105", attack: "entry.1075060316", release: "entry.260098427", notes: "entry.921066493",
+    meta: "entry.1445397111"
   },
   fallbackEmail: "",
   pieces: [
