@@ -86,10 +86,11 @@
       hp:'Listening on', hps:['Headphones','Speakers'],
       consent:'Your answers are recorded under the name you enter, or under an anonymous code if you leave it blank, and used for research only.',
       start:'Start', resume:'Continue',
-      listH:'Pieces', listSub:'Please do all five pieces (15 pairs). Use the button below to go through them in order, or open any piece. Finished pairs are marked and you can revisit and change an answer.', next:'Next pair',
+      listH:'Pieces', listSub:'Part 1 is five passages (15 pairs), Part 2 is single notes (15 short pairs). Use the button below to go through them in order, or open any group. Finished pairs are marked and you can revisit and change an answer.', next:'Next pair',
       pairsDone:(d,n)=>`${d} / ${n} pairs`, go:'Open', done:'Done',
-      allDone:'All 15 pairs answered. Thank you!', finish:'Finish',
+      allDone:'All pairs answered. Thank you!', finish:'Finish',
       pairH:(p,k,n)=>`${p} · pair ${k} of ${n}`,
+      part1:'Part 1: whole passages (about 15 min)', part2:'Part 2: single notes (about 5 min)', part2Sub:'Each pair is the same note from the same passage, played by the robot twice. Judge the sound of the note only.', qNote:'Which sustained note sounds cleaner / more resonant?',
       listen:'Listen', playA:'A', playB:'B', score:'Score', scoreNote:'The robot is playing the rhythm on a single open string, so no specific pitch is heard. Slurs are bowings.', hideScore:'Hide score', showScore:'Show score',
       qPrefer:'Overall, which take sounds better?', qConf:'How confident are you?', confL:['1 guess','2','3','4','5 certain'],
       qTone:'Sustained tone: which is clearer / more resonant?', qAttack:'Note starts: which begins more cleanly (less scratch, thump or late catch)?',
@@ -114,10 +115,11 @@
       hp:'收听方式', hps:['耳机','外放'],
       consent:'你的回答按你填的名字记录，留空则按一个匿名码记录，仅用于研究。',
       start:'开始', resume:'继续',
-      listH:'曲目', listSub:'请把五首都做完（共 15 对）。用下面的按钮按顺序做，或者任选一首进入。做完的对会打勾，可以回头修改。', next:'下一对',
+      listH:'曲目', listSub:'第一部分五首整段（15 对），第二部分单音（15 对，很短）。用下面的按钮按顺序做，或者任选一组进入。做完的对会打勾，可以回头修改。', next:'下一对',
       pairsDone:(d,n)=>`${d} / ${n} 对`, go:'进入', done:'完成',
-      allDone:'15 对全部完成，谢谢！', finish:'结束',
+      allDone:'全部完成，谢谢！', finish:'结束',
       pairH:(p,k,n)=>`${p} · 第 ${k} 对 / 共 ${n}`,
+      part1:'第一部分：整段（约 15 分钟）', part2:'第二部分：单音（约 5 分钟）', part2Sub:'每一对是同一段里的同一个音，机器人拉两次。只判断这个音本身的声音。', qNote:'哪个持续音更干净、更共鸣？',
       listen:'听', playA:'A', playB:'B', score:'乐谱', scoreNote:'机器人在单根空弦上拉这段的节奏，所以听不到具体音高。连音线表示一弓。', hideScore:'收起乐谱', showScore:'显示乐谱',
       qPrefer:'总体上，哪段更好听？', qConf:'把握有多大？', confL:['1 猜的','2','3','4','5 确定'],
       qTone:'持续音：哪段更清晰、更共鸣？', qAttack:'起音：哪段开始得更干净（更少刮擦、闷响、咬弦迟）？',
@@ -218,14 +220,15 @@
   function screenList(){
     if (!S.listener) { location.hash = '#intro'; return; }
     const n = totalPairs(), d = doneCount();
-    const rows = CFG.pieces.map(p => {
+    const rowOf = (p) => {
       const pd = pieceDone(p);
       let next = 1; for (let k=1;k<=p.pairs;k++) if (!S.answers[p.id+'/'+k]) { next = k; break; }
       return el('div',{class:'piece'},
         el('div',{class:'t'}, el('div',{class:'n'}, p.name[S.lang]||p.name.en), el('div',{class:'muted'}, p.desc[S.lang]||p.desc.en)),
         el('div',{class:'prog'}, pd===p.pairs ? '✓ '+L.done : L.pairsDone(pd,p.pairs)),
         el('button',{class:'btn go',type:'button',onclick:()=>{ location.hash = '#pair/'+p.id+'/'+(pd===p.pairs?1:next); }}, L.go));
-    });
+    };
+    const rows = [el('h3',{}, L.part1), ...CFG.pieces.filter(p=>p.part!==2).map(rowOf), el('h3',{}, L.part2), el('p',{class:'muted'}, L.part2Sub), ...CFG.pieces.filter(p=>p.part===2).map(rowOf)];
     show(
       el('div',{class:'card'},
         el('h2',{},L.listH), el('p',{class:'muted'},L.listSub),
@@ -297,17 +300,18 @@
       location.hash = nextKey || (doneCount()===totalPairs() ? '#done' : '#list');
     });
 
+    const isNote = p.part === 2;
     show(
       el('div',{class:'card'},
         el('h2',{}, L.pairH(p.name[S.lang]||p.name.en, k, p.pairs)),
-        el('h3',{}, L.score),
-        el('div',{class:'score'}, el('img',{src:'scores/'+pieceId+'.svg',alt:'score',loading:'eager'}), el('div',{class:'muted'}, L.scoreNote)),
+        isNote ? el('p',{class:'muted'}, L.part2Sub) : el('h3',{}, L.score),
+        isNote ? null : el('div',{class:'score'}, el('img',{src:'scores/'+pieceId+'.svg',alt:'score',loading:'eager'}), el('div',{class:'muted'}, L.scoreNote)),
         el('h3',{}, L.listen), player('A'), player('B'),
-        el('div',{class:'q'}, L.qPrefer), abs('prefer'),
+        el('div',{class:'q'}, isNote ? L.qNote : L.qPrefer), abs('prefer'),
         el('div',{class:'q'}, L.qConf), seg('confidence', L.confL.map((t,i)=>[String(i+1), t, ''])),
-        el('div',{class:'q'}, L.qTone), abs('tone'),
-        el('div',{class:'q'}, L.qAttack), abs('attack'),
-        el('div',{class:'q'}, L.qRelease), abs('release'),
+        isNote ? null : el('div',{class:'q'}, L.qTone), isNote ? null : abs('tone'),
+        isNote ? null : el('div',{class:'q'}, L.qAttack), isNote ? null : abs('attack'),
+        isNote ? null : el('div',{class:'q'}, L.qRelease), isNote ? null : abs('release'),
         el('div',{class:'q'}, L.notes), notes,
         hint, saveBtn,
         el('button',{class:'btn ghost',type:'button',onclick:()=>{ stopAudio(); location.hash='#list'; }}, L.back))
