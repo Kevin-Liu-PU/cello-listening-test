@@ -55,6 +55,9 @@
   .pill{display:inline-block;background:var(--soft);border-radius:999px;padding:2px 10px;font-size:13px;color:var(--accent);font-weight:600}
   .done{white-space:pre;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;overflow:auto;background:#faf9f6;border:1px solid var(--line);border-radius:10px;padding:10px;max-height:220px}
   .status{font-size:13px;color:var(--muted);margin-top:8px}
+  .score{border:1px solid var(--line);border-radius:12px;background:#fff;padding:8px 8px 6px;margin:0 0 6px}
+  .score img{display:block;width:100%;height:auto}
+  .score .muted{padding:4px 4px 0;font-size:13px}
   .banner{background:#fff6e5;border:1px solid #f1d9a6;color:#6b4a0a;border-radius:10px;padding:8px 12px;font-size:13px;margin-bottom:12px}
 </style>
 </head>
@@ -75,7 +78,7 @@
     en: {
       title:'Robot Cello Listening Test', lang:'中文',
       introH:'Which bowing sounds better?',
-      intro1:'A robot plays the same short passage twice, back to back, on the same cello. Each pair has an A take and a B take. Which is which is randomized and hidden. Loudness is as played, not normalized.',
+      intro1:'A robot plays the same short passage twice, back to back, on the same cello. Each pair has an A take and a B take. Which is which is randomized and hidden. Loudness is as played, not normalized. The robot is playing the rhythm on a single open string, so no specific pitch is heard.',
       intro2:'For each pair, play A and B as many times as you like, then answer a few quick questions. "Same" is a valid answer. There are no right answers.',
       intro3:'5 pieces, 3 pairs each, about 15 minutes. Headphones strongly recommended. You can stop and continue later on the same device.',
       name:'Your name or initials (optional)', namePh:'leave blank to stay anonymous',
@@ -87,7 +90,7 @@
       pairsDone:(d,n)=>`${d} / ${n} pairs`, go:'Open', done:'Done',
       allDone:'All 15 pairs answered. Thank you!', finish:'Finish',
       pairH:(p,k,n)=>`${p} · pair ${k} of ${n}`,
-      listen:'Listen', playA:'A', playB:'B',
+      listen:'Listen', playA:'A', playB:'B', score:'Score', scoreNote:'The robot is playing the rhythm on a single open string, so no specific pitch is heard. Slurs are bowings.', hideScore:'Hide score', showScore:'Show score',
       qPrefer:'Overall, which take sounds better?', qConf:'How confident are you?', confL:['1 guess','2','3','4','5 certain'],
       qTone:'Sustained tone: which is clearer / more resonant?', qAttack:'Note starts: which begins more cleanly (less scratch, thump or late catch)?',
       qRelease:'Note endings: which finishes more cleanly (less abrupt, noisy or uneven)?',
@@ -103,7 +106,7 @@
     zh: {
       title:'机器人大提琴听音测试', lang:'EN',
       introH:'哪一种弓法更好听？',
-      intro1:'机器人在同一把大提琴上背靠背拉同一小段两次。每一对有 A 和 B 两段，哪段是哪种弓法是随机的、不告知。响度按实际演奏，未做归一化。',
+      intro1:'机器人在同一把大提琴上背靠背拉同一小段两次。每一对有 A 和 B 两段，哪段是哪种弓法是随机的、不告知。响度按实际演奏，未做归一化。机器人在单根空弦上拉节奏，所以听不到具体音高。',
       intro2:'每一对先听 A 再听 B，可以反复听，然后回答几个小问题。"一样"是合法答案，没有标准答案。',
       intro3:'5 首曲子，每首 3 对，约 15 分钟。强烈建议戴耳机。可以中途停下，之后在同一设备上继续。',
       name:'你的名字或缩写（选填）', namePh:'留空则匿名',
@@ -115,7 +118,7 @@
       pairsDone:(d,n)=>`${d} / ${n} 对`, go:'进入', done:'完成',
       allDone:'15 对全部完成，谢谢！', finish:'结束',
       pairH:(p,k,n)=>`${p} · 第 ${k} 对 / 共 ${n}`,
-      listen:'听', playA:'A', playB:'B',
+      listen:'听', playA:'A', playB:'B', score:'乐谱', scoreNote:'机器人在单根空弦上拉这段的节奏，所以听不到具体音高。连音线表示一弓。', hideScore:'收起乐谱', showScore:'显示乐谱',
       qPrefer:'总体上，哪段更好听？', qConf:'把握有多大？', confL:['1 猜的','2','3','4','5 确定'],
       qTone:'持续音：哪段更清晰、更共鸣？', qAttack:'起音：哪段开始得更干净（更少刮擦、闷响、咬弦迟）？',
       qRelease:'收音：哪段结束得更干净（更少突兀、噪音、不均匀）？',
@@ -297,6 +300,8 @@
     show(
       el('div',{class:'card'},
         el('h2',{}, L.pairH(p.name[S.lang]||p.name.en, k, p.pairs)),
+        el('h3',{}, L.score),
+        el('div',{class:'score'}, el('img',{src:'scores/'+pieceId+'.svg',alt:'score',loading:'eager'}), el('div',{class:'muted'}, L.scoreNote)),
         el('h3',{}, L.listen), player('A'), player('B'),
         el('div',{class:'q'}, L.qPrefer), abs('prefer'),
         el('div',{class:'q'}, L.qConf), seg('confidence', L.confL.map((t,i)=>[String(i+1), t, ''])),
