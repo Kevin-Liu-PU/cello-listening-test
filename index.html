@@ -73,7 +73,7 @@
   const CFG = window.LT_CONFIG || {pieces:[], entry:{}};
   const qs = new URLSearchParams(location.search);
   if (qs.get('form')) CFG.formUrl = qs.get('form');           // local testing only
-  const KEY = 'lt_state_v2';
+  const KEY = 'lt_state_v3';
   const T = {
     en: {
       title:'Robot Cello Listening Test', lang:'中文',
@@ -92,8 +92,8 @@
       pairH:(p,k,n)=>`${p} · pair ${k} of ${n}`,
       listen:'Listen', playA:'A', playB:'B', score:'Score', scoreNote:'The robot is playing the rhythm on a single open string, so no specific pitch is heard. Slurs are bowings.', hideScore:'Hide score', showScore:'Show score',
       qPrefer:'Overall, which take sounds better?', qConf:'How confident are you?', confL:['1 guess','2','3','4','5 certain'],
-      qTone:'Sustained tone: which is clearer / more resonant?', qAttack:'Note starts: which begins more cleanly (less scratch, thump or late catch)?',
-      qRelease:'Note endings: which finishes more cleanly (less abrupt, noisy or uneven)?',
+      qTone:'Sustained tone: which version holds a steadier tone with better sound quality?', qAttack:'Note starts and bow changes: which version begins notes more cleanly, with fewer unintended scratches or breaks?',
+      qRelease:'Rhythm and note transitions: which version follows the written rhythm and connects notes more accurately?',
       A:'A', B:'B', same:'Same',
       notes:'Anything else you hear? (fullness, evenness, phrasing, bow noise ...)', notesPh:'optional',
       needPlay:'Listen to at least half of A and half of B before saving.', needAns:'Please answer the first two questions.',
@@ -120,8 +120,8 @@
       pairH:(p,k,n)=>`${p} · 第 ${k} 对 / 共 ${n}`,
       listen:'听', playA:'A', playB:'B', score:'乐谱', scoreNote:'机器人在单根空弦上拉这段的节奏，所以听不到具体音高。连音线表示一弓。', hideScore:'收起乐谱', showScore:'显示乐谱',
       qPrefer:'总体上，哪段更好听？', qConf:'把握有多大？', confL:['1 猜的','2','3','4','5 确定'],
-      qTone:'持续音：哪段更清晰、更共鸣？', qAttack:'起音：哪段开始得更干净（更少刮擦、闷响、咬弦迟）？',
-      qRelease:'收音：哪段结束得更干净（更少突兀、噪音、不均匀）？',
+      qTone:'持续音：哪段的持续音更稳定、音色更好？', qAttack:'起音与换弓：哪段音头更干净，非预期的刮擦或断音更少？',
+      qRelease:'节奏与音符衔接：哪段更符合谱面节奏、音符衔接更准确？',
       A:'A', B:'B', same:'一样',
       notes:'还听到什么？（饱满度、均匀度、句法、弓噪……）', notesPh:'选填',
       needPlay:'A 和 B 各至少听一半再保存。', needAns:'请先回答前两题。',
